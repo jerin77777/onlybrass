@@ -1,8 +1,6 @@
-import React from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 const ProductDetailPage = () => {
-  const { id } = useParams();
 
   // For current demo purposes, we define the Aethelred data here
   const product = {
