@@ -26,27 +26,30 @@ const CatalogPage = () => {
         <h1 className="catalog-title">Explore The Bundle</h1>
         
         {/* Story Bar */}
+        {/* Category Story Bar */}
         <div className="story-bar">
           <div className="story-item">
-            <div className="story-circle"><img src="/assets/bundle/story_1.png" alt="Explore Now" /></div>
-            <span>Explore Now</span>
+            <div className="story-circle"><img src="/assets/oro_knob.png" alt="Knobs" /></div>
+            <span>Knobs</span>
           </div>
           <div className="story-item">
-            <div className="story-circle"><img src="/assets/bundle/story_2.png" alt="New Collections" /></div>
-            <span>New Collections</span>
+            <div className="story-circle"><img src="/assets/pisa_handle.png" alt="Handles" /></div>
+            <span>Handles</span>
           </div>
           <div className="story-item">
-            <div className="story-circle"><img src="/assets/bundle/story_3.png" alt="Testimonial" /></div>
-            <span>Testimonial</span>
+            <div className="story-circle placeholder"></div>
+            <span>Draw Knobs</span>
           </div>
-          {/* Add more story items as placeholders to match the reference */}
-          {[1, 2, 3, 4].map(i => (
-             <div key={i} className="story-item">
-                <div className="story-circle placeholder"></div>
-                <span>testimonial</span>
-             </div>
-          ))}
+          <div className="story-item">
+            <div className="story-circle"><img src="/assets/bundle/story_2.png" alt="New Arrival" /></div>
+            <span>New Arrival</span>
+          </div>
+          <div className="story-item">
+            <div className="story-circle"><img src="/assets/bundle/story_1.png" alt="Collections" /></div>
+            <span>Collections</span>
+          </div>
         </div>
+
 
         <div className="catalog-content">
           {/* Sidebar Filters */}

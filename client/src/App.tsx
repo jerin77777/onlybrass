@@ -27,17 +27,45 @@ const HomePage = () => {
           <div className="hero-content">
             <div className="hero-subtitle">FINE CABINETRY HARDWARE</div>
             <h1 className="hero-title">The Jewelry Box</h1>
-            <p className="hero-desc">
-              Explore our definitive collection of architectural hardware. Each piece is hand-finished in our atelier, designed to serve as the signature accent for refined interiors.
-            </p>
-          </div>
-          <div className="hero-cta">
-            <p className="cta-text">Explore our collection</p>
-            <Link to="/catalog" className="btn">View Catalog</Link>
+            
+            <div className="hero-interaction">
+              <div className="category-nav-inline">
+                <div className="story-bar">
+                  <Link to="/catalog" className="story-item">
+                    <div className="story-circle"><img src="/assets/oro_knob.png" alt="Knobs" /></div>
+                    <span>Knobs</span>
+                  </Link>
+                  <Link to="/catalog" className="story-item">
+                    <div className="story-circle"><img src="/assets/pisa_handle.png" alt="Handles" /></div>
+                    <span>Handles</span>
+                  </Link>
+                  <Link to="/catalog" className="story-item">
+                    <div className="story-circle placeholder"></div>
+                    <span>Draw Knobs</span>
+                  </Link>
+                  <Link to="/catalog" className="story-item">
+                    <div className="story-circle"><img src="/assets/bundle/story_2.png" alt="New Arrival" /></div>
+                    <span>New Arrival</span>
+                  </Link>
+                  <Link to="/catalog" className="story-item">
+                    <div className="story-circle"><img src="/assets/bundle/story_1.png" alt="Collections" /></div>
+                    <span>Collections</span>
+                  </Link>
+                </div>
+              </div>
+              
+              <div className="hero-cta">
+                <p className="cta-text">Explore our collection</p>
+                <Link to="/catalog" className="btn">View Catalog</Link>
+              </div>
+            </div>
           </div>
         </section>
 
+
+
         <section className="collage-section">
+
           <img 
             className="collage-img collage-web" 
             src="/assets/web_collage.png" 
