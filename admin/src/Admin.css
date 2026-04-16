@@ -1,6 +1,7 @@
 .admin-dashboard {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   background-color: #f8f9fa;
   font-family: var(--sans);
 }
@@ -49,7 +50,18 @@
 .admin-main {
   flex: 1;
   padding: 3rem;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.view-products, .view-categories {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
 }
 
 .admin-header {
@@ -74,6 +86,27 @@
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   text-align: left;
+  display: flex;
+  flex-direction: column;
+}
+
+.scrollable-card {
+  flex: 1;
+  overflow-y: auto;
+  border: 1px solid #eee;
+}
+
+.scrollable-card::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollable-card::-webkit-scrollbar-thumb {
+  background: #eee;
+  border-radius: 4px;
+}
+
+.scrollable-card::-webkit-scrollbar-thumb:hover {
+  background: #ddd;
 }
 
 .form-grid {
@@ -365,6 +398,16 @@
   grid-template-columns: 1.5fr 1fr;
   gap: 2rem;
   align-items: start;
+  flex: 1;
+  overflow: hidden;
+  padding-bottom: 2rem;
+}
+
+.categories-column, .sub-categories-column {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
 }
 
 .column-header {
@@ -1029,5 +1072,40 @@
 
 .modal-confirm .admin-btn {
   min-width: 120px;
+}
+
+/* Search Bar Styles */
+.catalog-search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #f7f7fa;
+  border: 1.5px solid #f0f0f5;
+  border-radius: 12px;
+  padding: 0 1rem;
+  transition: all 0.3s ease;
+}
+
+.catalog-search-wrapper:focus-within {
+  border-color: #aa3bff;
+  box-shadow: 0 0 0 4px rgba(170, 59, 255, 0.1);
+  background: white;
+}
+
+.search-icon {
+  color: #999;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+
+.catalog-search-input {
+  border: none !important;
+  background: transparent !important;
+  padding: 0.8rem 0 !important;
+  font-size: 0.9rem !important;
+  width: 100%;
+  outline: none !important;
+  box-shadow: none !important;
+  color: #333;
 }
 

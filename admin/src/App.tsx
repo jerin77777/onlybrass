@@ -93,6 +93,8 @@ function App() {
   const [subCatSearchQuery, setSubCatSearchQuery] = useState('');
   const subCatDropdownRef = useRef<HTMLDivElement>(null);
 
+  const [prodListingSearchQuery, setProdListingSearchQuery] = useState('');
+
   // --- Data Fetching ---
   useEffect(() => {
     fetchInitialData();
@@ -547,6 +549,20 @@ function App() {
     }
   };
 
+  const handleToggleTopSeller = async (id: string, current: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({ is_top_seller: !current })
+        .eq('id', id);
+      if (error) throw error;
+      setProducts(products.map(p => p.id === id ? { ...p, is_top_seller: !current } : p));
+    } catch (error) {
+      console.error("Toggle failed", error);
+      alert("Failed to update status");
+    }
+  };
+
   return (
     <div className="admin-dashboard">
       <aside className="admin-sidebar">
@@ -570,7 +586,7 @@ function App() {
                   <h3>All Categories</h3>
                   <button className="btn-add-circle" onClick={() => { resetCategoryForm(); setIsCatModalOpen(true); }} title="Add Category">+</button>
                 </div>
-                <div className="admin-card" style={{padding: '0'}}>
+                <div className="admin-card scrollable-card" style={{padding: '0'}}>
                   <table className="admin-table">
                     <thead><tr><th>Image</th><th>Name</th><th className="action-cell"></th></tr></thead>
                     <tbody>
@@ -594,7 +610,7 @@ function App() {
                   <h3>Sub-Categories {selectedCategoryId && <span className="category-tag" style={{marginLeft: '1rem'}}>{categories.find(c => c.id === selectedCategoryId)?.name}</span>}</h3>
                   <button className="btn-add-circle" onClick={() => { resetSubCategoryForm(); setIsSubCatModalOpen(true); }} disabled={!selectedCategoryId} title="Add Sub-Category" style={{ opacity: selectedCategoryId ? 1 : 0.5 }}>+</button>
                 </div>
-                <div className="admin-card" style={{padding: '0'}}>
+                <div className="admin-card scrollable-card" style={{padding: '0'}}>
                   <table className="admin-table">
                     <thead><tr><th>Name</th><th className="action-cell"></th></tr></thead>
                     <tbody>
@@ -676,36 +692,60 @@ function App() {
           </div>
         ) : (
           <div className="view-products">
-            <header className="admin-header"><h2>Product Management</h2><button className="btn-add-circle" onClick={() => { resetProductForm(); setIsProdModalOpen(true); }}>+</button></header>
-            <div className="admin-card" style={{padding: '0'}}>
+            <header className="admin-header">
+              <h2>Product Management</h2>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <div className="catalog-search-wrapper" style={{ minWidth: '300px' }}>
+                  <svg className="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                  <input 
+                    type="text" 
+                    className="catalog-search-input" 
+                    placeholder="Search products by name or series..." 
+                    value={prodListingSearchQuery}
+                    onChange={e => setProdListingSearchQuery(e.target.value)}
+                  />
+                </div>
+                <button className="btn-add-circle" onClick={() => { resetProductForm(); setIsProdModalOpen(true); }}>+</button>
+              </div>
+            </header>
+            <div className="admin-card scrollable-card" style={{padding: '0'}}>
               <table className="admin-table">
-                <thead><tr><th>Product</th><th>Category</th><th>Sub-Category</th><th>Variants</th><th className="action-cell"></th></tr></thead>
+                <thead><tr><th>Image</th><th>Product</th><th>Category</th><th style={{ textAlign: 'center' }}>Top Seller</th><th className="action-cell"></th></tr></thead>
                 <tbody>
-                  {products.map(p => {
-                    const variants = p.product_variants || [];
+                  {products
+                    .filter(p => {
+                      if (!prodListingSearchQuery) return true;
+                      const q = prodListingSearchQuery.toLowerCase();
+                      return p.name.toLowerCase().includes(q) || (p.series && p.series.toLowerCase().includes(q));
+                    })
+                    .map(p => {
                     const displayCategory = (p as any).categories?.name || '-';
-                    const displaySubCategory = (p as any).sub_categories?.name || '-';
                     
                     return (
                       <tr key={p.id} className="selectable-row" onClick={() => handleEditOpen(p)}>
                         <td>
+                          <img 
+                            src={p.images?.[0] || '/assets/placeholder.png'} 
+                            alt={p.name} 
+                            style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} 
+                          />
+                        </td>
+                        <td>
                           <strong>{p.name}</strong><br/>
                           <small>{p.series}</small>
-                          {p.is_top_seller && <span className="category-tag" style={{ marginLeft: '10px', fontSize: '0.6rem', padding: '1px 5px' }}>TOP SELLER</span>}
                         </td>
                         <td><span className="category-tag">{displayCategory}</span></td>
-                        <td>{displaySubCategory}</td>
-                        <td>
-                          {variants.length > 0 ? (
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                              {variants.slice(0, 3).map((v, i) => (
-                                <span key={i} style={{ fontSize: '0.7rem', padding: '2px 6px', background: '#f0f0f5', borderRadius: '4px' }}>
-                                  {v.value}
-                                </span>
-                              ))}
-                              {variants.length > 3 && <span style={{ fontSize: '0.7rem', color: '#888' }}>+{variants.length - 3} more</span>}
+                        <td style={{ textAlign: 'center' }}>
+                          <label className="top-seller-switch" onClick={(e) => e.stopPropagation()} style={{ justifyContent: 'center' }}>
+                            <div className="toggle-wrapper">
+                              <input 
+                                type="checkbox" 
+                                checked={p.is_top_seller} 
+                                onChange={() => handleToggleTopSeller(p.id, p.is_top_seller)} 
+                              />
+                              <div className="toggle-slider"></div>
                             </div>
-                          ) : <span style={{ color: '#ccc', fontStyle: 'italic', fontSize: '0.8rem' }}>No variants</span>}
+                          </label>
                         </td>
                         <td className="action-cell">
                           <button 
