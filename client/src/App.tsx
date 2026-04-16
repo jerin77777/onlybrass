@@ -1,9 +1,56 @@
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link } from 'react-router-dom';
 import CatalogPage from './CatalogPage';
 import ProductDetailPage from './ProductDetailPage';
+import { supabase } from './supabase';
 import './index.css';
 
+interface ProductVariant {
+  id: string;
+  group_name: string;
+  group_type: string;
+  value: string;
+  price: number;
+  images: string[];
+}
+
+interface Product {
+  id: string;
+  name: string;
+  series: string;
+  is_top_seller: boolean;
+  base_price: number;
+  images: string[];
+  product_variants: ProductVariant[];
+}
+
 const HomePage = () => {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [topSellers, setTopSellers] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const { data: catData } = await supabase
+        .from('categories')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      const { data: prodData } = await supabase
+        .from('products')
+        .select('*, product_variants(*)')
+        .eq('is_top_seller', true)
+        .order('created_at', { ascending: false })
+        .limit(4);
+
+      if (catData) setCategories(catData);
+      if (prodData) setTopSellers(prodData);
+      setLoading(false);
+    };
+
+    fetchData();
+  }, []);
+
   return (
     <div className="HomePage">
       <header className="header">
@@ -14,9 +61,9 @@ const HomePage = () => {
           </Link>
         </div>
         <nav className="header-nav">
-          <a href="#" className="active">Collections</a>
-          <a href="#">Bespoke</a>
-          <a href="#">Our Story</a>
+          <Link to="/catalog">Collections</Link>
+          <a href="#top-sellers">Top Sellers</a>
+          <a href="#our-story">Our Story</a>
           <a href="#contact">Contact</a>
         </nav>
 
@@ -31,26 +78,32 @@ const HomePage = () => {
             <div className="hero-interaction">
               <div className="category-nav-inline">
                 <div className="story-bar">
-                  <Link to="/catalog" className="story-item">
-                    <div className="story-circle"><img src="/assets/oro_knob.png" alt="Knobs" /></div>
-                    <span>Knobs</span>
-                  </Link>
-                  <Link to="/catalog" className="story-item">
-                    <div className="story-circle"><img src="/assets/pisa_handle.png" alt="Handles" /></div>
-                    <span>Handles</span>
-                  </Link>
-                  <Link to="/catalog" className="story-item">
-                    <div className="story-circle placeholder"></div>
-                    <span>Draw Knobs</span>
-                  </Link>
-                  <Link to="/catalog" className="story-item">
-                    <div className="story-circle"><img src="/assets/bundle/story_2.png" alt="New Arrival" /></div>
-                    <span>New Arrival</span>
-                  </Link>
-                  <Link to="/catalog" className="story-item">
-                    <div className="story-circle"><img src="/assets/bundle/story_1.png" alt="Collections" /></div>
-                    <span>Collections</span>
-                  </Link>
+                  {loading ? (
+                    <div className="loading-dots">...</div>
+                  ) : (
+                    categories.map((cat) => (
+                      <Link key={cat.id} to={`/catalog?category=${cat.id}`} className="story-item">
+                        <div className="story-circle">
+                          {cat.image_url ? (
+                            <img src={cat.image_url} alt={cat.name} />
+                          ) : (
+                            <div className="placeholder"></div>
+                          )}
+                        </div>
+                        <span>{cat.name}</span>
+                      </Link>
+                    ))
+                  )}
+                  
+                  {/* Fallback if no categories exist in DB yet */}
+                  {!loading && categories.length === 0 && (
+                    <>
+                      <Link to="/catalog" className="story-item">
+                        <div className="story-circle-placeholder"></div>
+                        <span>Loading...</span>
+                      </Link>
+                    </>
+                  )}
                 </div>
               </div>
               
@@ -74,44 +127,55 @@ const HomePage = () => {
           />
         </section>
 
-        <section className="top-sellers">
+        <section id="top-sellers" className="top-sellers">
           <div className="top-sellers-header">
             <h2 className="section-title">Top Sellers</h2>
             <Link to="/catalog" className="view-all-link">View All</Link>
           </div>
           <div className="top-sellers-grid">
-            {[
-              { id: 1, name: 'Oro Handle and Knob', price: '₹ 1,099.00', image: '/assets/oro_knob.png', options: ['28mm / Gold / Brass', '32mm / Gold / Brass'] },
-              { id: 2, name: 'Alhambra Knob', price: '₹ 799.00', image: '/assets/alhambra_knob.png', options: ['27mm / Shell White / Acrylic', '30mm / Shell White / Acrylic'] },
-              { id: 3, name: 'Regal Gold Knob', price: '₹ 499.00', image: '/assets/regal_knob.png', options: ['20mm / Gold / Brass', '25mm / Gold / Brass'] },
-              { id: 4, name: 'Pisa Handle and Knob', price: '₹ 699.00', image: '/assets/pisa_handle.png', options: ['25mm / Gold / Brass', '30mm / Gold / Brass'] }
-            ].map(product => (
-              <div key={product.id} className="product-card">
-                <div className="product-image">
-                  <img src={product.image} alt={product.name} />
-                </div>
-                <div className="product-info">
-                  <h3 className="product-name">{product.name}</h3>
-                  <div className="product-price">{product.price}</div>
-                  <div className="product-options">
-                    <select className="product-select">
-                      {product.options.map(opt => <option key={opt}>{opt}</option>)}
-                    </select>
+            {topSellers.map(product => {
+              const mainVariant = product.product_variants?.[0];
+              return (
+                <div key={product.id} className="product-card">
+                  <div className="product-image">
+                    <img src={mainVariant?.images?.[0] || product.images?.[0]} alt={product.name} />
                   </div>
-                  <button className="add-to-cart-btn">Add to Cart</button>
+                  <div className="product-info">
+                    <h3 className="product-name">{product.name}</h3>
+                    <div className="product-price">
+                       {(mainVariant?.price ?? product.base_price) != null 
+                         ? `₹ ${(mainVariant?.price ?? product.base_price).toLocaleString()}` 
+                         : 'Price on Inquiry'}
+                    </div>
+                    <div className="product-options">
+                      <select className="product-select">
+                        {product.product_variants?.map(v => (
+                          <option key={v.id}>{v.group_name}: {v.value}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <Link to={`/product/${product.id}`} className="add-to-cart-btn" style={{ textAlign: 'center', display: 'block', textDecoration: 'none' }}>
+                      View Details
+                    </Link>
+                  </div>
                 </div>
+              );
+            })}
+            {!loading && topSellers.length === 0 && (
+              <div style={{ gridColumn: 'span 4', textAlign: 'center', padding: '3rem', color: '#999' }}>
+                No top sellers currently featured.
               </div>
-            ))}
+            )}
           </div>
         </section>
 
-        <section className="bespoke-banner">
+        <section id="our-story" className="bespoke-banner">
           <div className="bespoke-content">
-            <h2 className="bespoke-title">Bespoke Finishes</h2>
+            <h2 className="bespoke-title">Our Story</h2>
             <p className="bespoke-desc">
-              Beyond our standard collections, we offer a bespoke service for architects and interior designers. Select from over 40 custom finishes to match your project's unique palette.
+              OnlyBrass was born from a passion for timeless craftsmanship. We believe that hardware is the jewelry of the home—the final, defining touch that turns a house into a sanctuary of style. Every piece in our collection is a testament to the enduring beauty of solid brass, hand-finished to perfection for those who appreciate the finer details of living.
             </p>
-            <a href="#" className="btn">Inquire About Custom</a>
+            <Link to="/catalog" className="btn">Explore The Collection</Link>
           </div>
           <div className="bespoke-samples">
             <div className="sample-square sample-1"></div>

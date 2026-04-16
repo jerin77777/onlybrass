@@ -1,23 +1,84 @@
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { supabase } from './supabase';
+
+interface Variant {
+  name: string;
+  values: string[];
+}
+
+interface ProductVariant {
+  id: string;
+  group_name: string;
+  group_type: string;
+  value: string;
+  price: number;
+  images: string[];
+}
+
+interface Product {
+  id: string;
+  name: string;
+  series: string;
+  description: string;
+  is_top_seller: boolean;
+  base_price: number;
+  images: string[];
+  categories: { name: string };
+  sub_categories?: { name: string };
+  product_variants: ProductVariant[];
+}
 
 const ProductDetailPage = () => {
+  const { id } = useParams<{ id: string }>();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  const [activeImage, setActiveImage] = useState<string | null>(null);
 
-  // For current demo purposes, we define the Aethelred data here
-  const product = {
-    name: "Aethelred Handle",
-    series: "ARTISAN SIGNATURE SERIES",
-    description: "A masterclass in tactile contrast. Hand-forged solid brass meets the ethereal luminescence of responsibly sourced Mother of Pearl.",
-    finishes: [
-      { id: 'brass', name: 'ANTIQUE BRASS', color: '#b3885d' },
-      { id: 'nickel', name: 'SATIN NICKEL', color: '#c0c0c0' }
-    ],
-    details: [
-      { label: "MATERIAL", value: "Solid Brass / MOP Inlay" },
-      { label: "DIMENSIONS", value: "L 165mm x H 22mm x P 55mm" },
-      { label: "WEIGHT", value: "0.85 kg / Unit" },
-      { label: "MOUNTING", value: "Concealed Screws" }
-    ]
+  useEffect(() => {
+    const fetchProduct = async () => {
+      if (!id) return;
+      
+      const { data, error } = await supabase
+        .from('products')
+        .select('*, product_variants(*), categories(name), sub_categories(name)')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching product:', error);
+      } else if (data) {
+        setProduct(data);
+        // Set initial variant and default image
+        if (data.product_variants && data.product_variants.length > 0) {
+          setSelectedVariant(data.product_variants[0]);
+          setActiveImage(data.product_variants[0].images?.[0] || data.images?.[0]);
+        } else {
+          setActiveImage(data.images?.[0]);
+        }
+      }
+      setLoading(false);
+    };
+
+    fetchProduct();
+  }, [id]);
+
+  const handleVariantClick = (v: ProductVariant) => {
+    setSelectedVariant(v);
+    if (v.images && v.images.length > 0) {
+      setActiveImage(v.images[0]);
+    }
   };
+
+  if (loading) return <div className="PDP">Loading product details...</div>;
+  if (!product) return <div className="PDP">Product not found.</div>;
+
+  // Combine product images and selected variant images for the gallery
+  const allImages = Array.from(new Set([
+    ...(product.images || []),
+    ...(selectedVariant?.images || [])
+  ])).filter(Boolean);
 
   return (
     <div className="PDP">
@@ -28,33 +89,38 @@ const ProductDetailPage = () => {
             <span className="header-logo-text">ONLYBRASS</span>
           </Link>
         </div>
-
       </header>
 
       <main className="pdp-container">
-        {/* Breadcrumbs */}
         <nav className="breadcrumbs">
           <Link to="/catalog">COLLECTIONS</Link> 
           <span className="separator">›</span> 
-          <span>THE ARTISAN SERIES</span> 
+          <span>{(product as any).categories?.name?.toUpperCase() || 'COLLECTION'}</span> 
           <span className="separator">›</span> 
           <span className="current">{product.name.toUpperCase()}</span>
         </nav>
 
         <div className="pdp-layout">
-          {/* Left Column: Gallery */}
           <section className="pdp-gallery">
-            <div className="main-image-placeholder">
-              {/* This would be /assets/aethelred_main.png */}
-              <div className="placeholder-text">AETHELRED MAIN IMAGE</div>
+            <div className="pdp-gallery-main">
+              <img src={activeImage || '/assets/placeholder.png'} alt={product.name} />
             </div>
-            <div className="pdp-thumbnails">
-              <div className="thumb-placeholder"><div className="placeholder-text">THUMB 1</div></div>
-              <div className="thumb-placeholder"><div className="placeholder-text">THUMB 2</div></div>
-            </div>
+            
+            {allImages.length > 1 && (
+              <div className="pdp-thumbnails">
+                {allImages.map((img, idx) => (
+                  <div 
+                    key={idx} 
+                    className={`thumb-item ${activeImage === img ? 'active' : ''}`}
+                    onClick={() => setActiveImage(img)}
+                  >
+                    <img src={img} alt={`${product.name} ${idx}`} />
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
 
-          {/* Right Column: Info */}
           <section className="pdp-info">
             <div className="pdp-header">
               <span className="series-name">{product.series}</span>
@@ -63,25 +129,58 @@ const ProductDetailPage = () => {
 
             <p className="product-description">{product.description}</p>
 
-            <div className="finish-selection">
-              <h3 className="section-subtitle">SELECT FINISH</h3>
-              <div className="finish-swatches">
-                {product.finishes.map(finish => (
-                  <div key={finish.id} className="finish-card">
-                    <div className="swatch-preview" style={{ backgroundColor: finish.color }}></div>
-                    <span className="finish-name">{finish.name}</span>
+            {product.product_variants && product.product_variants.length > 0 && (
+              <div className="finish-selection">
+                {Object.entries(
+                  product.product_variants.reduce((acc, v) => {
+                    if (!acc[v.group_name]) acc[v.group_name] = [];
+                    acc[v.group_name].push(v);
+                    return acc;
+                  }, {} as Record<string, ProductVariant[]>)
+                ).map(([groupName, variants], i) => (
+                  <div key={i} style={{marginBottom: '1.5rem'}}>
+                    <h3 className="section-subtitle">{groupName.toUpperCase()}</h3>
+                    <div className="variant-options">
+                      {variants.map((v, j) => {
+                        const isSelected = selectedVariant?.id === v.id;
+                        return (
+                          <div 
+                            key={j} 
+                            className={`option-tag ${isSelected ? 'active' : ''}`} 
+                            onClick={() => handleVariantClick(v)}
+                          >
+                            {v.group_type === 'color' && (
+                              <div className="color-dot" style={{ background: v.value }}></div>
+                            )}
+                            {v.value}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 ))}
               </div>
-            </div>
+            )}
 
             <div className="technical-specs">
-              {product.details.map((detail, index) => (
-                <div key={index} className="spec-item">
-                  <span className="spec-label">{detail.label}</span>
-                  <span className="spec-value">{detail.value}</span>
-                </div>
-              ))}
+               <div className="spec-item">
+                  <span className="spec-label">PRICE</span>
+                  <span className="spec-value">
+                    {(selectedVariant?.price ?? product.base_price) != null 
+                      ? `₹ ${(selectedVariant?.price ?? product.base_price).toLocaleString()}` 
+                      : 'Price on Inquiry'}
+                  </span>
+               </div>
+               <div className="spec-item">
+                  <span className="spec-label">CATEGORY</span>
+                  <span className="spec-value">{(product as any).categories?.name || '-'}</span>
+               </div>
+               {(product as any).sub_categories?.name && (
+                 <div className="spec-item">
+                    <span className="spec-label">SUB-CATEGORY</span>
+                    <span className="spec-value">{(product as any).sub_categories?.name}</span>
+                 </div>
+               )}
             </div>
 
             <div className="pdp-actions">
