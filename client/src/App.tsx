@@ -1,9 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Routes, Route, Link } from 'react-router-dom';
 import CatalogPage from './CatalogPage';
 import ProductDetailPage from './ProductDetailPage';
 import { supabase } from './supabase';
 import './index.css';
+
+interface Category {
+  id: string;
+  name: string;
+  image_url: string;
+}
+
 
 interface ProductVariant {
   id: string;

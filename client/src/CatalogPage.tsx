@@ -1,15 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from './supabase';
 
-interface Variant {
-  name: string;
-  values: string[];
-}
 
 interface SubCategory {
   id: string;
   name: string;
+  category_id: string;
 }
 
 interface ProductVariant {
@@ -33,6 +30,7 @@ interface Product {
   series: string;
   category_id: string;
   sub_category_id: string;
+  description: string;
   is_top_seller: boolean;
   base_price: number;
   images: string[];

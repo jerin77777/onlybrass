@@ -888,7 +888,7 @@ function App() {
                                   ))
                                 }
                                 {subCategories
-                                  .filter(sc => categories.find(c => c.id === sc.category_id)?.name === prodCat)
+                                  .filter(sc => categories.find(c => c.id === sc.category_id)?.name === categories.find(c => c.id === prodCatId)?.name)
                                   .filter(sc => sc.name.toLowerCase().includes(subCatSearchQuery.toLowerCase())).length === 0 && (
                                   <div style={{ padding: '1rem', textAlign: 'center', color: '#999', fontSize: '0.85rem' }}>No sub-categories found</div>
                                 )}
@@ -975,7 +975,7 @@ function App() {
                                   </div>
                                   <div className="variant-item-image">
                                     <div className="variant-thumb-container">
-                                      {(v.images?.length > 0 || v.image_files?.length > 0) ? (
+                                      {((v.images?.length ?? 0) > 0 || (v.image_files?.length ?? 0) > 0) ? (
                                         <div className="variant-previews">
                                           {v.images?.map((url, idx) => (
                                             <div key={`vexist-${idx}`} className="mini-preview">

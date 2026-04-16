@@ -1,11 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { supabase } from './supabase';
 
-interface Variant {
-  name: string;
-  values: string[];
-}
 
 interface ProductVariant {
   id: string;
