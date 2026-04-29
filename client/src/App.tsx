@@ -4,6 +4,8 @@ import CatalogPage from './CatalogPage';
 import ProductDetailPage from './ProductDetailPage';
 import { supabase } from './supabase';
 import './index.css';
+import AdminDashboard from './components/admin/AdminDashboard';
+import AdminLogin from './components/admin/AdminLogin';
 
 interface Category {
   id: string;
@@ -35,6 +37,16 @@ const HomePage = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [topSellers, setTopSellers] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [homeSettings, setHomeSettings] = useState({
+    homepage_collage_image: '/assets/web_collage.png',
+    homepage_story_title: 'Our Story',
+    homepage_story_description: 'OnlyBrass was born from a passion for timeless craftsmanship. We believe that hardware is the jewelry of the home—the final, defining touch that turns a house into a sanctuary of style. Every piece in our collection is a testament to the enduring beauty of solid brass, hand-finished to perfection for those who appreciate the finer details of living.',
+    homepage_story_image: '/assets/story_image.png',
+    homepage_mailing_title: 'Contact Us',
+    homepage_mailing_description: "Have a question or looking for a bespoke consultation? We'd love to hear from you.",
+    contact_email: 'hello@onlybrass.com',
+    mailing_address: '123 Brass Avenue, Design District, New Delhi, India 110001',
+  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -52,6 +64,16 @@ const HomePage = () => {
 
       if (catData) setCategories(catData);
       if (prodData) setTopSellers(prodData);
+      
+      const { data: settingsData } = await supabase.from('site_settings').select('*');
+      if (settingsData) {
+        const settings: any = { ...homeSettings };
+        settingsData.forEach(item => {
+          settings[item.key] = item.value;
+        });
+        setHomeSettings(settings);
+      }
+
       setLoading(false);
     };
 
@@ -125,10 +147,9 @@ const HomePage = () => {
 
 
         <section className="collage-section">
-
           <img 
             className="collage-img collage-web" 
-            src="/assets/web_collage.png" 
+            src={homeSettings.homepage_collage_image} 
             alt="ONLYBRASS Product Features" 
             loading="lazy" 
           />
@@ -178,33 +199,65 @@ const HomePage = () => {
 
         <section id="our-story" className="bespoke-banner">
           <div className="bespoke-content">
-            <h2 className="bespoke-title">Our Story</h2>
+            <h2 className="bespoke-title">{homeSettings.homepage_story_title}</h2>
             <p className="bespoke-desc">
-              OnlyBrass was born from a passion for timeless craftsmanship. We believe that hardware is the jewelry of the home—the final, defining touch that turns a house into a sanctuary of style. Every piece in our collection is a testament to the enduring beauty of solid brass, hand-finished to perfection for those who appreciate the finer details of living.
+              {homeSettings.homepage_story_description}
             </p>
             <Link to="/catalog" className="btn">Explore The Collection</Link>
           </div>
           <div className="bespoke-samples">
-            <div className="sample-square sample-1"></div>
-            <div className="sample-square sample-2"></div>
+            <img src={homeSettings.homepage_story_image} alt="Our Story" className="story-main-img" />
           </div>
         </section>
 
         <section id="contact" className="contact-section">
           <div className="contact-container">
-            <h2 className="contact-title">Contact Us</h2>
+            <h2 className="contact-title">{homeSettings.homepage_mailing_title}</h2>
             <p className="contact-desc">
-              Have a question or looking for a bespoke consultation? We'd love to hear from you.
+              {homeSettings.homepage_mailing_description}
             </p>
-            <form className="contact-form" onSubmit={(e) => e.preventDefault()}>
+            {homeSettings.mailing_address && (
+              <div className="contact-address" style={{ marginBottom: '2rem', color: '#999', fontSize: '0.9rem' }}>
+                <strong>Visit Us:</strong><br />
+                {homeSettings.mailing_address}
+              </div>
+            )}
+            <form className="contact-form" onSubmit={async (e) => {
+              e.preventDefault();
+              const form = e.target as HTMLFormElement;
+              const formData = new FormData(form);
+              const name = formData.get('name') as string;
+              const email = formData.get('email') as string;
+              const message = formData.get('message') as string;
+
+              try {
+                // 1. Save to Supabase
+                const { error } = await supabase
+                  .from('contact_messages')
+                  .insert([{ name, email, message }]);
+
+                if (error) throw error;
+
+                // 2. Open mail client
+                const subject = `Inquiry from ${name}`;
+                const body = `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`;
+                window.location.href = `mailto:${homeSettings.contact_email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+                alert('Thank you for your message! Your inquiry has been logged and we will open your mail client to send it.');
+                form.reset();
+              } catch (err) {
+                console.error('Error sending message:', err);
+                alert('There was an error sending your message. Please try again.');
+              }
+            }}>
               <div className="form-group">
-                <input type="text" placeholder="Your Name" required />
+                <input type="text" name="name" placeholder="Your Name" required />
               </div>
               <div className="form-group">
-                <input type="email" placeholder="Your Email" required />
+                <input type="email" name="email" placeholder="Your Email" required />
               </div>
               <div className="form-group">
-                <textarea placeholder="Your Message" rows={5} required></textarea>
+                <textarea name="message" placeholder="Your Message" rows={5} required></textarea>
               </div>
               <button type="submit" className="btn">Send Inquiry</button>
             </form>
@@ -228,11 +281,30 @@ const HomePage = () => {
 };
 
 function App() {
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => {
+    return localStorage.getItem('isAdminLoggedIn') === 'true';
+  });
+
+  const handleAdminLogin = (success: boolean) => {
+    setIsAdminLoggedIn(success);
+    if (success) localStorage.setItem('isAdminLoggedIn', 'true');
+  };
+
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/catalog" element={<CatalogPage />} />
       <Route path="/product/:id" element={<ProductDetailPage />} />
+      <Route 
+        path="/admin" 
+        element={
+          isAdminLoggedIn ? (
+            <AdminDashboard />
+          ) : (
+            <AdminLogin onLogin={handleAdminLogin} />
+          )
+        } 
+      />
     </Routes>
   );
 }

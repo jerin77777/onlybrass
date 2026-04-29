@@ -29,6 +29,17 @@ LOCAL_OVERRIDES = {
     "Collections": "collections_premium.png"
 }
 
+SITE_SETTINGS = [
+    {"key": "homepage_collage_image", "value": "https://owyphcjcrtczrvqtuziz.supabase.co/storage/v1/object/public/images/site/1777456479_web_collage.png"},
+    {"key": "homepage_story_title", "value": "Our Story"},
+    {"key": "homepage_story_description", "value": "OnlyBrass was born from a passion for timeless craftsmanship. We believe that hardware is the jewelry of the home—the final, defining touch that turns a house into a sanctuary of style. Every piece in our collection is a testament to the enduring beauty of solid brass, hand-finished to perfection for those who appreciate the finer details of living."},
+    {"key": "homepage_story_image", "value": "https://owyphcjcrtczrvqtuziz.supabase.co/storage/v1/object/public/images/site/1777456483_story_image.png"},
+    {"key": "homepage_mailing_title", "value": "Contact Us"},
+    {"key": "homepage_mailing_description", "value": "Have a question or looking for a bespoke consultation? We'd love to hear from you."},
+    {"key": "contact_email", "value": "hello@onlybrass.com"},
+    {"key": "mailing_address", "value": "123 Brass Avenue, Design District, New Delhi, India 110001"}
+]
+
 
 
 def upload_to_storage(local_rel_path: str, remote_folder: str) -> str | None:
@@ -212,6 +223,12 @@ def main():
             ]
             supabase.table("product_variants").insert(variants_b).execute()
             print(f"  [OK] Seeded '{prod_b['name']}' with {len(images_b)} images.")
+
+    # 4. Seed Site Settings
+    print("\nSeeding Site Settings...")
+    for setting in SITE_SETTINGS:
+        supabase.table("site_settings").upsert(setting).execute()
+        print(f"  [OK] Seeded setting: {setting['key']}")
 
     print("\nRelational seeding complete.")
 

@@ -67,9 +67,21 @@ FOR INSERT
 TO public
 WITH CHECK (bucket_id = 'images');
 
--- Allow public viewing of images
-CREATE POLICY "Public View"
-ON storage.objects
-FOR SELECT
-TO public
-USING (bucket_id = 'images');
+-- 7. Create Contact Messages Table
+CREATE TABLE contact_messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  message TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Enable RLS for contact_messages
+ALTER TABLE contact_messages ENABLE ROW LEVEL SECURITY;
+
+-- Allow public to insert messages
+CREATE POLICY "Allow public insert access" ON contact_messages FOR INSERT WITH CHECK (true);
+
+-- Allow all access for development (or admin view only in production)
+CREATE POLICY "Allow all access for development" ON contact_messages FOR ALL USING (true);
+

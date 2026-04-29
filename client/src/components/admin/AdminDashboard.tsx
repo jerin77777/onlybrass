@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './Admin.css';
-import { supabase } from './supabase';
+import { supabase } from '../../supabase';
 
 interface Category {
   id: string;
@@ -27,6 +27,14 @@ interface Variant {
   values: VariantValue[];
 }
 
+interface Message {
+  id: string;
+  name: string;
+  email: string;
+  message: string;
+  created_at: string;
+}
+
 interface Product {
   id: string;
   name: string;
@@ -48,11 +56,12 @@ interface Product {
   created_at: string;
 }
 
-function App() {
-  const [activeTab, setActiveTab] = useState<'categories' | 'products'>('products');
+function AdminDashboard() {
+  const [activeTab, setActiveTab] = useState<'categories' | 'products' | 'home' | 'messages'>('products');
   const [categories, setCategories] = useState<Category[]>([]);
   const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [isCatModalOpen, setIsCatModalOpen] = useState(false);
   const [isSubCatModalOpen, setIsSubCatModalOpen] = useState(false);
@@ -94,6 +103,29 @@ function App() {
   const subCatDropdownRef = useRef<HTMLDivElement>(null);
 
   const [prodListingSearchQuery, setProdListingSearchQuery] = useState('');
+  
+  // Home Page Settings State
+  const [homeSettings, setHomeSettings] = useState<{
+    homepage_collage_image: string;
+    homepage_story_title: string;
+    homepage_story_description: string;
+    homepage_story_image: string;
+    homepage_mailing_title: string;
+    homepage_mailing_description: string;
+    contact_email: string;
+    mailing_address: string;
+  }>({
+    homepage_collage_image: '/assets/web_collage.png',
+    homepage_story_title: 'Our Story',
+    homepage_story_description: 'OnlyBrass was born from a passion for timeless craftsmanship. We believe that hardware is the jewelry of the home—the final, defining touch that turns a house into a sanctuary of style. Every piece in our collection is a testament to the enduring beauty of solid brass, hand-finished to perfection for those who appreciate the finer details of living.',
+    homepage_story_image: '/assets/story_image.png',
+    homepage_mailing_title: 'Contact Us',
+    homepage_mailing_description: "Have a question or looking for a bespoke consultation? We'd love to hear from you.",
+    contact_email: 'hello@onlybrass.com',
+    mailing_address: '123 Brass Avenue, Design District, New Delhi, India 110001',
+  });
+  const [homeCollageFile, setHomeCollageFile] = useState<File | null>(null);
+  const [homeStoryFile, setHomeStoryFile] = useState<File | null>(null);
 
   // --- Data Fetching ---
   useEffect(() => {
@@ -134,6 +166,72 @@ function App() {
     if (catData && catData.length > 0 && !selectedCategoryId) {
       setSelectedCategoryId(catData[0].id);
     }
+    await fetchHomeSettings();
+    await fetchMessages();
+  };
+
+  const fetchMessages = async () => {
+    const { data, error } = await supabase
+      .from('contact_messages')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) console.error('Error fetching messages:', error);
+    else setMessages(data || []);
+  };
+
+  const fetchHomeSettings = async () => {
+    const { data } = await supabase.from('site_settings').select('*');
+    if (data) {
+      const settings: any = { ...homeSettings };
+      data.forEach(item => {
+        settings[item.key] = item.value;
+      });
+      setHomeSettings(settings);
+    }
+  };
+
+  const handleSaveHomeSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsUploading(true);
+    try {
+      let collageUrl = homeSettings.homepage_collage_image;
+      if (homeCollageFile) {
+        collageUrl = await uploadImage(homeCollageFile, 'site');
+      }
+
+      let storyUrl = homeSettings.homepage_story_image;
+      if (homeStoryFile) {
+        storyUrl = await uploadImage(homeStoryFile, 'site');
+      }
+
+      const updates = [
+        { key: 'homepage_collage_image', value: collageUrl },
+        { key: 'homepage_story_title', value: homeSettings.homepage_story_title },
+        { key: 'homepage_story_description', value: homeSettings.homepage_story_description },
+        { key: 'homepage_story_image', value: storyUrl },
+        { key: 'homepage_mailing_title', value: homeSettings.homepage_mailing_title },
+        { key: 'homepage_mailing_description', value: homeSettings.homepage_mailing_description },
+        { key: 'contact_email', value: homeSettings.contact_email },
+        { key: 'mailing_address', value: homeSettings.mailing_address },
+      ];
+
+      for (const update of updates) {
+        const { error } = await supabase
+          .from('site_settings')
+          .upsert(update);
+        if (error) throw error;
+      }
+
+      setHomeSettings(prev => ({ ...prev, homepage_collage_image: collageUrl, homepage_story_image: storyUrl }));
+      setHomeCollageFile(null);
+      setHomeStoryFile(null);
+      alert('Home page settings updated successfully!');
+    } catch (err) {
+      console.error('Failed to save home settings:', err);
+      alert('Failed to save home settings');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   // Helper: Image Upload
@@ -156,7 +254,6 @@ function App() {
   
   const extractStoragePath = (url: string): string | null => {
     try {
-      // Url format: .../storage/v1/object/public/images/products/...
       const marker = '/storage/v1/object/public/images/';
       const index = url.indexOf(marker);
       if (index === -1) return null;
@@ -167,7 +264,6 @@ function App() {
     }
   };
 
-  // Variant Helpers
   const resetCategoryForm = () => {
     setCatName('');
     setCatImageFile(null);
@@ -205,7 +301,6 @@ function App() {
     setProdTopSeller(product.is_top_seller);
     setExistingProdImages(product.images || []);
     
-    // Group variants by group_name to rebuild the prodVariants structure
     const groups: { [key: string]: Variant } = {};
     product.product_variants.forEach(v => {
       if (!groups[v.group_name]) {
@@ -374,14 +469,12 @@ function App() {
     setIsUploading(true);
 
     try {
-      // Upload product common images
       const finalCommonImages: string[] = [...existingProdImages];
       for (const file of prodImages) {
         const url = await uploadImage(file, 'products');
         finalCommonImages.push(url);
       }
 
-      // 1. Insert or Update core product
       let productId = editingProductId;
       
       if (editingProductId) {
@@ -401,7 +494,6 @@ function App() {
           
         if (productError) throw productError;
         
-        // Delete all old variants for syncing
         const { error: deleteError } = await supabase
           .from('product_variants')
           .delete()
@@ -428,12 +520,10 @@ function App() {
         productId = productData.id;
       }
 
-      // 2. Process Variants and their images
       for (const group of prodVariants) {
         for (const value of group.values) {
           let variantImages = [...(value.images || [])];
 
-          // Upload image if present
           if (value.image_files && value.image_files.length > 0) {
              for (const file of value.image_files) {
                const url = await uploadImage(file, 'products');
@@ -441,7 +531,6 @@ function App() {
              }
           }
 
-          // Insert variant row
           const finalPrice = value.price ? parseFloat(value.price) : null;
           const { error: variantError } = await supabase
             .from('product_variants')
@@ -508,7 +597,6 @@ function App() {
 
   const handleDeleteProduct = async (product: Product) => {
     try {
-      // 1. Collect all images to delete from storage
       const imageUrls = new Set<string>();
       if (product.images) product.images.forEach(url => imageUrls.add(url));
       if (product.product_variants) {
@@ -521,7 +609,6 @@ function App() {
         .map(url => extractStoragePath(url))
         .filter((path): path is string => !!path);
 
-      // 2. Delete database record (Variants are cascaded)
       const { error: dbError } = await supabase
         .from('products')
         .delete()
@@ -529,11 +616,9 @@ function App() {
 
       if (dbError) throw dbError;
       
-      // 3. Clear from state
       setProducts(products.filter(p => p.id !== product.id));
       setDeletingProduct(null);
 
-      // 4. Delete images from storage (non-blocking errors)
       if (storagePaths.length > 0) {
         const { error: storageError } = await supabase.storage
           .from('images')
@@ -573,11 +658,142 @@ function App() {
         <nav className="admin-nav">
           <div className={`nav-item ${activeTab === 'products' ? 'active' : ''}`} onClick={() => setActiveTab('products')}>Products</div>
           <div className={`nav-item ${activeTab === 'categories' ? 'active' : ''}`} onClick={() => setActiveTab('categories')}>Categories</div>
+          <div className={`nav-item ${activeTab === 'home' ? 'active' : ''}`} onClick={() => setActiveTab('home')}>Home Page</div>
+          <div className={`nav-item ${activeTab === 'messages' ? 'active' : ''}`} onClick={() => setActiveTab('messages')}>Messages</div>
         </nav>
       </aside>
 
       <main className="admin-main">
-        {activeTab === 'categories' ? (
+        {activeTab === 'home' ? (
+          <div className="view-home">
+            <header className="admin-header"><h2>Home Page Configuration</h2></header>
+            <div className="admin-card" style={{ width: '100%', maxWidth: '1000px', margin: '0 auto' }}>
+              <form onSubmit={handleSaveHomeSettings}>
+                <div className="form-group">
+                  <label>Collage Image (After Collections)</label>
+                  <div className="image-edit-container">
+                    <input 
+                      type="file" 
+                      id="home-collage-upload"
+                      className="hidden-file-input"
+                      accept="image/*" 
+                      onChange={e => setHomeCollageFile(e.target.files?.[0] || null)} 
+                    />
+                    { (homeCollageFile || homeSettings.homepage_collage_image) ? (
+                      <label htmlFor="home-collage-upload" className="image-preview-wrapper">
+                        <img 
+                          src={homeCollageFile ? URL.createObjectURL(homeCollageFile) : homeSettings.homepage_collage_image} 
+                          alt="Collage Preview" 
+                        />
+                        <div className="image-overlay">
+                          <span>REPLACE IMAGE</span>
+                        </div>
+                      </label>
+                    ) : (
+                      <label htmlFor="home-collage-upload" className="admin-btn btn-secondary">
+                        CHOOSE FILE
+                      </label>
+                    ) }
+                  </div>
+                </div>
+
+                <div className="form-divider" style={{ margin: '2rem 0', borderTop: '1px solid #eee' }}></div>
+
+                <div className="form-group">
+                  <label>Our Story Title</label>
+                  <input 
+                    value={homeSettings.homepage_story_title} 
+                    onChange={e => setHomeSettings({ ...homeSettings, homepage_story_title: e.target.value })} 
+                    required 
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Our Story Description</label>
+                  <textarea 
+                    value={homeSettings.homepage_story_description} 
+                    onChange={e => setHomeSettings({ ...homeSettings, homepage_story_description: e.target.value })} 
+                    rows={5}
+                    required 
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Our Story Image</label>
+                  <div className="image-edit-container">
+                    <input 
+                      type="file" 
+                      id="home-story-upload"
+                      className="hidden-file-input"
+                      accept="image/*" 
+                      onChange={e => setHomeStoryFile(e.target.files?.[0] || null)} 
+                    />
+                    { (homeStoryFile || homeSettings.homepage_story_image) ? (
+                      <label htmlFor="home-story-upload" className="image-preview-wrapper">
+                        <img 
+                          src={homeStoryFile ? URL.createObjectURL(homeStoryFile) : homeSettings.homepage_story_image} 
+                          alt="Story Preview" 
+                        />
+                        <div className="image-overlay">
+                          <span>REPLACE IMAGE</span>
+                        </div>
+                      </label>
+                    ) : (
+                      <label htmlFor="home-story-upload" className="admin-btn btn-secondary">
+                        CHOOSE FILE
+                      </label>
+                    ) }
+                  </div>
+                </div>
+
+                <div className="form-divider" style={{ margin: '2rem 0', borderTop: '1px solid #eee' }}></div>
+
+                <div className="form-group">
+                  <label>Mailing (Contact) Title</label>
+                  <input 
+                    value={homeSettings.homepage_mailing_title} 
+                    onChange={e => setHomeSettings({ ...homeSettings, homepage_mailing_title: e.target.value })} 
+                    required 
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Mailing (Contact) Description</label>
+                  <textarea 
+                    value={homeSettings.homepage_mailing_description} 
+                    onChange={e => setHomeSettings({ ...homeSettings, homepage_mailing_description: e.target.value })} 
+                    rows={3}
+                    required 
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Contact Email (Where inquiries are sent)</label>
+                  <input 
+                    type="email"
+                    value={homeSettings.contact_email} 
+                    onChange={e => setHomeSettings({ ...homeSettings, contact_email: e.target.value })} 
+                    required 
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Mailing Address (Displayed in Contact section)</label>
+                  <textarea 
+                    value={homeSettings.mailing_address} 
+                    onChange={e => setHomeSettings({ ...homeSettings, mailing_address: e.target.value })} 
+                    rows={2}
+                    required 
+                  />
+                </div>
+
+                <button 
+                  type="submit" 
+                  className="admin-btn btn-primary" 
+                  style={{ marginTop: '2rem', width: '100%' }} 
+                  disabled={isUploading}
+                >
+                  {isUploading ? 'Uploading...' : 'Save Home Page Settings'}
+                </button>
+              </form>
+            </div>
+          </div>
+        ) : activeTab === 'categories' ? (
           <div className="view-categories">
             <header className="admin-header"><h2>Category Management</h2></header>
             <div className="categories-container">
@@ -633,7 +849,6 @@ function App() {
               </div>
             </div>
 
-            {/* Modals */}
             {isCatModalOpen && (
               <div className="modal-backdrop" onClick={() => { resetCategoryForm(); setIsCatModalOpen(false); }}>
                 <div className="modal-content" onClick={e => e.stopPropagation()}>
@@ -690,7 +905,7 @@ function App() {
               </div>
             )}
           </div>
-        ) : (
+        ) : activeTab === 'products' ? (
           <div className="view-products">
             <header className="admin-header">
               <h2>Product Management</h2>
@@ -766,7 +981,6 @@ function App() {
               </table>
             </div>
 
-            {/* Confirmation Modal */}
             {deletingProduct && (
               <div className="modal-backdrop" onClick={() => setDeletingProduct(null)}>
                 <div className="modal-content modal-confirm" onClick={e => e.stopPropagation()}>
@@ -813,7 +1027,7 @@ function App() {
                           <input type="file" multiple accept="image/*" onChange={e => {
                             const newFiles = Array.from(e.target.files || []);
                             setProdImages([...prodImages, ...newFiles]);
-                            e.target.value = ''; // Reset input to allow same file selection
+                            e.target.value = ''; 
                           }} />
                         </div>
                         {(existingProdImages.length > 0 || prodImages.length > 0) && (
@@ -876,9 +1090,6 @@ function App() {
                                     </div>
                                   ))
                                 }
-                                {categories.filter(c => c.name.toLowerCase().includes(catSearchQuery.toLowerCase())).length === 0 && (
-                                  <div style={{ padding: '1rem', textAlign: 'center', color: '#999', fontSize: '0.85rem' }}>No categories found</div>
-                                )}
                               </div>
                             </div>
                           )}
@@ -927,11 +1138,6 @@ function App() {
                                     </div>
                                   ))
                                 }
-                                {subCategories
-                                  .filter(sc => categories.find(c => c.id === sc.category_id)?.name === categories.find(c => c.id === prodCatId)?.name)
-                                  .filter(sc => sc.name.toLowerCase().includes(subCatSearchQuery.toLowerCase())).length === 0 && (
-                                  <div style={{ padding: '1rem', textAlign: 'center', color: '#999', fontSize: '0.85rem' }}>No sub-categories found</div>
-                                )}
                               </div>
                             </div>
                           )}
@@ -947,12 +1153,6 @@ function App() {
                         </button>
                       </div>
                       
-                      {prodVariants.length === 0 && (
-                        <div style={{ padding: '2rem', textAlign: 'center', background: '#f9f9fb', borderRadius: '14px', border: '1.5px dashed #eee', color: '#999', fontSize: '0.9rem' }}>
-                          No variants added yet. Add groups like Size, Color, or Material.
-                        </div>
-                      )}
-
                       {prodVariants.map((group, gIndex) => (
                         <div key={gIndex} className="variant-group">
                           <div className="variant-header">
@@ -991,17 +1191,12 @@ function App() {
                             <span style={{ flex: '0 0 40px' }}></span>
                           </div>
                           <div className="variant-list-container">
-                            {group.values.map((v, vIndex) => {
-                              const isHex = /^#([A-Fa-f0-9]{3}){1,2}$/.test(v.value);
-                              const showError = group.type === 'color' && v.value && !isHex;
-
-                              return (
+                            {group.values.map((v, vIndex) => (
                                 <div key={vIndex} className="variant-item-row">
                                   <div className="variant-item-value-wrapper">
-                                    {group.type === 'color' && isHex && <div className="color-preview-chip" style={{ background: v.value }}></div>}
+                                    {group.type === 'color' && v.value && /^#([A-Fa-f0-9]{3}){1,2}$/.test(v.value) && <div className="color-preview-chip" style={{ background: v.value }}></div>}
                                     <input 
                                       placeholder={group.type === 'color' ? '#FFFFFF' : 'Value'} 
-                                      className={showError ? 'variant-input-error' : ''}
                                       value={v.value} 
                                       onChange={e => updateVariantValueField(gIndex, vIndex, 'value', e.target.value)} 
                                     />
@@ -1051,8 +1246,7 @@ function App() {
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                                   </button>
                                 </div>
-                              );
-                            })}
+                              ))}
                           </div>
                           
                           <button 
@@ -1072,10 +1266,46 @@ function App() {
               </div>
             )}
           </div>
+        ) : (
+          <div className="view-messages">
+            <header className="admin-header">
+              <h2>User Inquiries</h2>
+              <button className="admin-btn btn-secondary" onClick={fetchMessages}>Refresh</button>
+            </header>
+            <div className="admin-card scrollable-card" style={{padding: '0'}}>
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Message</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {messages.map(m => (
+                    <tr key={m.id}>
+                      <td style={{ whiteSpace: 'nowrap' }}>{new Date(m.created_at).toLocaleDateString()}</td>
+                      <td><strong>{m.name}</strong></td>
+                      <td><a href={`mailto:${m.email}`} style={{ color: '#007bff', textDecoration: 'none' }}>{m.email}</a></td>
+                      <td style={{ maxWidth: '400px', fontSize: '0.9rem' }}>{m.message}</td>
+                    </tr>
+                  ))}
+                  {messages.length === 0 && (
+                    <tr>
+                      <td colSpan={4} style={{ textAlign: 'center', padding: '3rem', color: '#999' }}>
+                        No messages received yet.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         )}
       </main>
     </div>
   );
 }
 
-export default App;
+export default AdminDashboard;

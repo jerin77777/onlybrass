@@ -426,26 +426,16 @@ img.collage-img {
 .bespoke-samples {
   display: flex;
   gap: var(--spacing-md);
+  max-width: 500px;
 }
 
-.sample-square {
-  width: 120px;
-  height: 120px;
-  background-color: #ddd;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-  transition: transform 0.3s ease;
-}
-
-.sample-square:hover {
-  transform: translateY(-5px);
-}
-
-.sample-1 {
-  background: linear-gradient(135deg, #d4af37 0%, #aa7c11 100%);
-}
-
-.sample-2 {
-  background: linear-gradient(135deg, #e0e0e0 0%, #a0a0a0 100%);
+.story-main-img {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  border-radius: 4px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  animation: fadeIn 1.5s ease forwards;
 }
 
 /* Footer */

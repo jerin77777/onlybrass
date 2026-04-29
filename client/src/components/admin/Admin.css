@@ -1,3 +1,12 @@
+:root {
+  --text: #6b6375;
+  --text-h: #08060d;
+  --bg: #fff;
+  --border: #e5e4e7;
+  --accent: #aa3bff;
+  --sans: 'Inter', system-ui, sans-serif;
+}
+
 .admin-dashboard {
   display: flex;
   height: 100vh;
@@ -57,11 +66,21 @@
   box-sizing: border-box;
 }
 
-.view-products, .view-categories {
+.view-products, .view-categories, .view-home {
   display: flex;
   flex-direction: column;
   height: 100%;
-  overflow: hidden;
+  overflow-y: auto;
+  padding-bottom: 2rem;
+}
+
+.view-home::-webkit-scrollbar {
+  width: 8px;
+}
+
+.view-home::-webkit-scrollbar-thumb {
+  background: #eee;
+  border-radius: 4px;
 }
 
 .admin-header {
@@ -121,6 +140,12 @@
   flex-direction: column;
   gap: 0.6rem;
   margin-bottom: 0.5rem;
+}
+
+.form-divider {
+  height: 1px;
+  background-color: #f0f0f5;
+  margin: 2rem 0;
 }
 
 .form-group label {
@@ -1006,6 +1031,67 @@
   color: #888;
   width: 100%;
   cursor: pointer;
+}
+
+/* Home Page Image Edit Styles */
+.hidden-file-input {
+  display: none;
+}
+
+.image-edit-container {
+  margin-top: 0.5rem;
+}
+
+.image-preview-wrapper {
+  position: relative;
+  display: block;
+  width: 200px;
+  height: 200px;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid #f0f0f5;
+  transition: all 0.3s ease;
+}
+
+.image-preview-wrapper:hover {
+  border-color: #aa3bff;
+  box-shadow: 0 8px 20px rgba(170, 59, 255, 0.15);
+}
+
+.image-preview-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.image-preview-wrapper:hover .image-overlay {
+  opacity: 1;
+}
+
+.image-overlay span {
+  color: white;
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.6rem 1.2rem;
+  border: 2px solid white;
+  border-radius: 8px;
 }
 
 .variant-image-input::file-selector-button {
