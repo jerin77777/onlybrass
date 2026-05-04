@@ -106,6 +106,8 @@ function AdminDashboard() {
   
   // Home Page Settings State
   const [homeSettings, setHomeSettings] = useState<{
+    site_name: string;
+    site_logo: string;
     homepage_collage_image: string;
     homepage_story_title: string;
     homepage_story_description: string;
@@ -115,6 +117,8 @@ function AdminDashboard() {
     contact_email: string;
     mailing_address: string;
   }>({
+    site_name: 'ONLYBRASS',
+    site_logo: '/assets/logo.png',
     homepage_collage_image: '/assets/web_collage.png',
     homepage_story_title: 'Our Story',
     homepage_story_description: 'OnlyBrass was born from a passion for timeless craftsmanship. We believe that hardware is the jewelry of the home—the final, defining touch that turns a house into a sanctuary of style. Every piece in our collection is a testament to the enduring beauty of solid brass, hand-finished to perfection for those who appreciate the finer details of living.',
@@ -126,6 +130,7 @@ function AdminDashboard() {
   });
   const [homeCollageFile, setHomeCollageFile] = useState<File | null>(null);
   const [homeStoryFile, setHomeStoryFile] = useState<File | null>(null);
+  const [siteLogoFile, setSiteLogoFile] = useState<File | null>(null);
 
   // --- Data Fetching ---
   useEffect(() => {
@@ -204,7 +209,14 @@ function AdminDashboard() {
         storyUrl = await uploadImage(homeStoryFile, 'site');
       }
 
+      let logoUrl = homeSettings.site_logo;
+      if (siteLogoFile) {
+        logoUrl = await uploadImage(siteLogoFile, 'site');
+      }
+
       const updates = [
+        { key: 'site_name', value: homeSettings.site_name },
+        { key: 'site_logo', value: logoUrl },
         { key: 'homepage_collage_image', value: collageUrl },
         { key: 'homepage_story_title', value: homeSettings.homepage_story_title },
         { key: 'homepage_story_description', value: homeSettings.homepage_story_description },
@@ -222,13 +234,19 @@ function AdminDashboard() {
         if (error) throw error;
       }
 
-      setHomeSettings(prev => ({ ...prev, homepage_collage_image: collageUrl, homepage_story_image: storyUrl }));
+      setHomeSettings(prev => ({ 
+        ...prev, 
+        homepage_collage_image: collageUrl, 
+        homepage_story_image: storyUrl,
+        site_logo: logoUrl
+      }));
       setHomeCollageFile(null);
       setHomeStoryFile(null);
-      alert('Home page settings updated successfully!');
+      setSiteLogoFile(null);
+      alert('Settings updated successfully!');
     } catch (err) {
-      console.error('Failed to save home settings:', err);
-      alert('Failed to save home settings');
+      console.error('Failed to save settings:', err);
+      alert('Failed to save settings');
     } finally {
       setIsUploading(false);
     }
@@ -652,13 +670,13 @@ function AdminDashboard() {
     <div className="admin-dashboard">
       <aside className="admin-sidebar">
         <div className="admin-logo" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <img src="/assets/logo.png" alt="ONLYBRASS" style={{ height: '30px', width: 'auto' }} />
-          <span style={{ fontSize: '1.2rem', letterSpacing: '0.1em' }}>ONLYBRASS</span>
+          <img src={homeSettings.site_logo} alt={homeSettings.site_name} style={{ height: '30px', width: 'auto' }} />
+          <span style={{ fontSize: '1.2rem', letterSpacing: '0.1em' }}>{homeSettings.site_name}</span>
         </div>
         <nav className="admin-nav">
           <div className={`nav-item ${activeTab === 'products' ? 'active' : ''}`} onClick={() => setActiveTab('products')}>Products</div>
           <div className={`nav-item ${activeTab === 'categories' ? 'active' : ''}`} onClick={() => setActiveTab('categories')}>Categories</div>
-          <div className={`nav-item ${activeTab === 'home' ? 'active' : ''}`} onClick={() => setActiveTab('home')}>Home Page</div>
+          <div className={`nav-item ${activeTab === 'home' ? 'active' : ''}`} onClick={() => setActiveTab('home')}>Site Configuration</div>
           <div className={`nav-item ${activeTab === 'messages' ? 'active' : ''}`} onClick={() => setActiveTab('messages')}>Messages</div>
         </nav>
       </aside>
@@ -666,9 +684,49 @@ function AdminDashboard() {
       <main className="admin-main">
         {activeTab === 'home' ? (
           <div className="view-home">
-            <header className="admin-header"><h2>Home Page Configuration</h2></header>
+            <header className="admin-header"><h2>Site & Home Page Configuration</h2></header>
             <div className="admin-card" style={{ width: '100%', maxWidth: '1000px', margin: '0 auto' }}>
               <form onSubmit={handleSaveHomeSettings}>
+                <div className="form-group">
+                  <label>Site Name</label>
+                  <input 
+                    value={homeSettings.site_name} 
+                    onChange={e => setHomeSettings({ ...homeSettings, site_name: e.target.value })} 
+                    required 
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>Site Logo</label>
+                  <div className="image-edit-container">
+                    <input 
+                      type="file" 
+                      id="site-logo-upload"
+                      className="hidden-file-input"
+                      accept="image/*" 
+                      onChange={e => setSiteLogoFile(e.target.files?.[0] || null)} 
+                    />
+                    { (siteLogoFile || homeSettings.site_logo) ? (
+                      <label htmlFor="site-logo-upload" className="image-preview-wrapper" style={{ height: '80px', width: 'auto', minWidth: '150px' }}>
+                        <img 
+                          src={siteLogoFile ? URL.createObjectURL(siteLogoFile) : homeSettings.site_logo} 
+                          alt="Logo Preview" 
+                          style={{ objectFit: 'contain' }}
+                        />
+                        <div className="image-overlay">
+                          <span>REPLACE LOGO</span>
+                        </div>
+                      </label>
+                    ) : (
+                      <label htmlFor="site-logo-upload" className="admin-btn btn-secondary">
+                        CHOOSE LOGO
+                      </label>
+                    ) }
+                  </div>
+                </div>
+
+                <div className="form-divider" style={{ margin: '2rem 0', borderTop: '1px solid #eee' }}></div>
+
                 <div className="form-group">
                   <label>Collage Image (After Collections)</label>
                   <div className="image-edit-container">

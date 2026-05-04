@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { supabase } from './supabase';
+import { useSettings } from './contexts/SettingsContext';
 
 
 interface ProductVariant {
@@ -26,6 +27,7 @@ interface Product {
 }
 
 const ProductDetailPage = () => {
+  const { settings } = useSettings();
   const { id } = useParams<{ id: string }>();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,7 +69,7 @@ const ProductDetailPage = () => {
     }
   };
 
-  if (loading) return <div className="PDP">Loading product details...</div>;
+  if (loading) return <div className="PDP"></div>;
   if (!product) return <div className="PDP">Product not found.</div>;
 
   // Combine product images and selected variant images for the gallery
@@ -81,8 +83,8 @@ const ProductDetailPage = () => {
       <header className="header">
         <div className="header-logo">
           <Link to="/" className="header-logo-container">
-            <img src="/assets/logo.png" alt="ONLYBRASS" className="header-logo-img" />
-            <span className="header-logo-text">ONLYBRASS</span>
+            <img src={settings.site_logo} alt={settings.site_name} className="header-logo-img" />
+            <span className="header-logo-text">{settings.site_name}</span>
           </Link>
         </div>
       </header>
@@ -194,7 +196,7 @@ const ProductDetailPage = () => {
 
       <footer className="footer container">
         <div className="footer-copyright">
-          © {new Date().getFullYear()} ONLYBRASS ATELIER. ALL RIGHTS RESERVED.
+          © {new Date().getFullYear()} {settings.site_name} ATELIER. ALL RIGHTS RESERVED.
         </div>
       </footer>
     </div>

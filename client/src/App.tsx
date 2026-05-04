@@ -6,6 +6,7 @@ import { supabase } from './supabase';
 import './index.css';
 import AdminDashboard from './components/admin/AdminDashboard';
 import AdminLogin from './components/admin/AdminLogin';
+import { SettingsProvider, useSettings } from './contexts/SettingsContext';
 
 interface Category {
   id: string;
@@ -34,19 +35,10 @@ interface Product {
 }
 
 const HomePage = () => {
+  const { settings, loading: settingsLoading } = useSettings();
   const [categories, setCategories] = useState<Category[]>([]);
   const [topSellers, setTopSellers] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [homeSettings, setHomeSettings] = useState({
-    homepage_collage_image: '/assets/web_collage.png',
-    homepage_story_title: 'Our Story',
-    homepage_story_description: 'OnlyBrass was born from a passion for timeless craftsmanship. We believe that hardware is the jewelry of the home—the final, defining touch that turns a house into a sanctuary of style. Every piece in our collection is a testament to the enduring beauty of solid brass, hand-finished to perfection for those who appreciate the finer details of living.',
-    homepage_story_image: '/assets/story_image.png',
-    homepage_mailing_title: 'Contact Us',
-    homepage_mailing_description: "Have a question or looking for a bespoke consultation? We'd love to hear from you.",
-    contact_email: 'hello@onlybrass.com',
-    mailing_address: '123 Brass Avenue, Design District, New Delhi, India 110001',
-  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -65,15 +57,6 @@ const HomePage = () => {
 
         if (catData) setCategories(catData);
         if (prodData) setTopSellers(prodData);
-        
-        const { data: settingsData } = await supabase.from('site_settings').select('*');
-        if (settingsData) {
-          const settings: any = { ...homeSettings };
-          settingsData.forEach(item => {
-            settings[item.key] = item.value;
-          });
-          setHomeSettings(settings);
-        }
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -89,8 +72,8 @@ const HomePage = () => {
       <header className="header">
         <div className="header-logo">
           <Link to="/" className="header-logo-container">
-            <img src="/assets/logo.png" alt="ONLYBRASS" className="header-logo-img" />
-            <span className="header-logo-text">ONLYBRASS</span>
+            <img src={settings.site_logo} alt={settings.site_name} className="header-logo-img" />
+            <span className="header-logo-text">{settings.site_name}</span>
           </Link>
         </div>
         <nav className="header-nav">
@@ -111,9 +94,7 @@ const HomePage = () => {
             <div className="hero-interaction">
               <div className="category-nav-inline">
                 <div className="story-bar">
-                  {loading ? (
-                    <div className="loading-dots">...</div>
-                  ) : (
+                  {loading ? null : (
                     categories.map((cat) => (
                       <Link key={cat.id} to={`/catalog?category=${cat.id}`} className="story-item">
                         <div className="story-circle">
@@ -129,14 +110,6 @@ const HomePage = () => {
                   )}
                   
                   {/* Fallback if no categories exist in DB yet */}
-                  {!loading && categories.length === 0 && (
-                    <>
-                      <Link to="/catalog" className="story-item">
-                        <div className="story-circle-placeholder"></div>
-                        <span>Loading...</span>
-                      </Link>
-                    </>
-                  )}
                 </div>
               </div>
               
@@ -153,8 +126,8 @@ const HomePage = () => {
         <section className="collage-section">
           <img 
             className="collage-img collage-web" 
-            src={homeSettings.homepage_collage_image} 
-            alt="ONLYBRASS Product Features" 
+            src={settings.homepage_collage_image} 
+            alt={`${settings.site_name} Product Features`} 
             loading="lazy" 
           />
         </section>
@@ -203,27 +176,27 @@ const HomePage = () => {
 
         <section id="our-story" className="bespoke-banner">
           <div className="bespoke-content">
-            <h2 className="bespoke-title">{homeSettings.homepage_story_title}</h2>
+            <h2 className="bespoke-title">{settings.homepage_story_title}</h2>
             <p className="bespoke-desc">
-              {homeSettings.homepage_story_description}
+              {settings.homepage_story_description}
             </p>
             <Link to="/catalog" className="btn">Explore The Collection</Link>
           </div>
           <div className="bespoke-samples">
-            <img src={homeSettings.homepage_story_image} alt="Our Story" className="story-main-img" />
+            <img src={settings.homepage_story_image} alt="Our Story" className="story-main-img" />
           </div>
         </section>
 
         <section id="contact" className="contact-section">
           <div className="contact-container">
-            <h2 className="contact-title">{homeSettings.homepage_mailing_title}</h2>
+            <h2 className="contact-title">{settings.homepage_mailing_title}</h2>
             <p className="contact-desc">
-              {homeSettings.homepage_mailing_description}
+              {settings.homepage_mailing_description}
             </p>
-            {homeSettings.mailing_address && (
+            {settings.mailing_address && (
               <div className="contact-address" style={{ marginBottom: '2rem', color: '#999', fontSize: '0.9rem' }}>
                 <strong>Visit Us:</strong><br />
-                {homeSettings.mailing_address}
+                {settings.mailing_address}
               </div>
             )}
             <form className="contact-form" onSubmit={async (e) => {
@@ -245,7 +218,7 @@ const HomePage = () => {
                 // 2. Open mail client
                 const subject = `Inquiry from ${name}`;
                 const body = `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`;
-                window.location.href = `mailto:${homeSettings.contact_email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                window.location.href = `mailto:${settings.contact_email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
                 alert('Thank you for your message! Your inquiry has been logged and we will open your mail client to send it.');
                 form.reset();
@@ -271,7 +244,7 @@ const HomePage = () => {
 
       <footer className="footer container">
         <div className="footer-copyright">
-          © {new Date().getFullYear()} ONLYBRASS ATELIER. ALL RIGHTS RESERVED.
+          © {new Date().getFullYear()} {settings.site_name} ATELIER. ALL RIGHTS RESERVED.
         </div>
         <nav className="footer-nav">
           <a href="#">Contact</a>
@@ -295,21 +268,23 @@ function App() {
   };
 
   return (
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/catalog" element={<CatalogPage />} />
-      <Route path="/product/:id" element={<ProductDetailPage />} />
-      <Route 
-        path="/admin" 
-        element={
-          isAdminLoggedIn ? (
-            <AdminDashboard />
-          ) : (
-            <AdminLogin onLogin={handleAdminLogin} />
-          )
-        } 
-      />
-    </Routes>
+    <SettingsProvider>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/catalog" element={<CatalogPage />} />
+        <Route path="/product/:id" element={<ProductDetailPage />} />
+        <Route 
+          path="/admin" 
+          element={
+            isAdminLoggedIn ? (
+              <AdminDashboard />
+            ) : (
+              <AdminLogin onLogin={handleAdminLogin} />
+            )
+          } 
+        />
+      </Routes>
+    </SettingsProvider>
   );
 }
 

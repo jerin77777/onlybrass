@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from './supabase';
+import { useSettings } from './contexts/SettingsContext';
 
 
 interface SubCategory {
@@ -40,6 +41,7 @@ interface Product {
 }
 
 const CatalogPage = () => {
+  const { settings } = useSettings();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
@@ -47,11 +49,24 @@ const CatalogPage = () => {
   const [selectedCatId, setSelectedCatId] = useState<string | null>(null);
   const [selectedSubCatId, setSelectedSubCatId] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<string>('default');
+  const [isSortOpen, setIsSortOpen] = useState(false);
+  const sortRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [minPrice, setMinPrice] = useState<number>(0);
   const [maxPrice, setMaxPrice] = useState<number>(10000);
   const [dynamicLimit, setDynamicLimit] = useState<number>(10000);
   const [searchParams] = useSearchParams();
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (sortRef.current && !sortRef.current.contains(event.target as Node)) {
+        setIsSortOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const categoryFromUrl = searchParams.get('category');
@@ -129,8 +144,8 @@ const CatalogPage = () => {
       <header className="header">
         <div className="header-logo">
           <Link to="/" className="header-logo-container">
-            <img src="/assets/logo.png" alt="ONLYBRASS" className="header-logo-img" />
-            <span className="header-logo-text">ONLYBRASS</span>
+            <img src={settings.site_logo} alt={settings.site_name} className="header-logo-img" />
+            <span className="header-logo-text">{settings.site_name}</span>
           </Link>
         </div>
       </header>
@@ -163,7 +178,7 @@ const CatalogPage = () => {
           <aside className="catalog-sidebar">
             <div className="filter-group">
               <h3>Availability</h3>
-              <div className="filter-option"><input type="checkbox" id="instock" /> <label htmlFor="instock">In stock</label></div>
+              <div className="filter-option"><input type="checkbox" id="instock" /><label htmlFor="instock">In stock</label></div>
             </div>
             <div className="filter-group">
               <h3>Price Range</h3>
@@ -211,8 +226,7 @@ const CatalogPage = () => {
                     id={`sub-${sub.id}`} 
                     checked={selectedSubCatId === sub.id}
                     onChange={() => toggleSubCategory(sub.id)}
-                  /> 
-                  <label htmlFor={`sub-${sub.id}`}>{sub.name}</label>
+                  /><label htmlFor={`sub-${sub.id}`}>{sub.name}</label>
                 </div>
               ))}
             </div>
@@ -223,25 +237,53 @@ const CatalogPage = () => {
              <div className="catalog-sort-bar">
                 <div className="product-count">{filteredProducts.length} products</div>
                 <div className="catalog-controls">
-                  <div className="catalog-search-wrapper">
-                    <svg className="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                  <div className="site-search-wrapper">
+                    <svg className="site-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                     <input 
                       type="text" 
-                      className="catalog-search-input" 
+                      className="site-search-input" 
                       placeholder="Search collection..." 
                       value={searchQuery}
                       onChange={e => setSearchQuery(e.target.value)}
                     />
                   </div>
-                  <select 
-                    className="sort-select" 
-                    value={sortOrder} 
-                    onChange={e => setSortOrder(e.target.value)}
-                  >
-                     <option value="default">SORT BY</option>
-                     <option value="low-high">Price: Low to High</option>
-                     <option value="high-low">Price: High to Low</option>
-                  </select>
+                  <div className="sort-container" ref={sortRef}>
+                    <div 
+                      className={`sort-trigger ${isSortOpen ? 'active' : ''}`}
+                      onClick={() => setIsSortOpen(!isSortOpen)}
+                    >
+                      <span>
+                        {sortOrder === 'default' ? 'SORT BY' : 
+                         sortOrder === 'low-high' ? 'Price: Low to High' : 
+                         'Price: High to Low'}
+                      </span>
+                      <svg className="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                      </svg>
+                    </div>
+                    {isSortOpen && (
+                      <div className="sort-dropdown-menu">
+                        <div 
+                          className={`sort-option ${sortOrder === 'default' ? 'selected' : ''}`}
+                          onClick={() => { setSortOrder('default'); setIsSortOpen(false); }}
+                        >
+                          SORT BY
+                        </div>
+                        <div 
+                          className={`sort-option ${sortOrder === 'low-high' ? 'selected' : ''}`}
+                          onClick={() => { setSortOrder('low-high'); setIsSortOpen(false); }}
+                        >
+                          Price: Low to High
+                        </div>
+                        <div 
+                          className={`sort-option ${sortOrder === 'high-low' ? 'selected' : ''}`}
+                          onClick={() => { setSortOrder('high-low'); setIsSortOpen(false); }}
+                        >
+                          Price: High to Low
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
              </div>
 
@@ -258,7 +300,7 @@ const CatalogPage = () => {
                         <button className="wishlist-btn">♡</button>
                       </div>
                       <div className="product-card-info">
-                        <div className="brand-name">ONLYBRASS</div>
+                        <div className="brand-name">{settings.site_name}</div>
                         <h4 className="product-item-name">{product.name}</h4>
                         <div className="product-item-price">
                           {(product.product_variants?.[0]?.price ?? product.base_price) != null ? `₹ ${(product.product_variants[0]?.price ?? product.base_price).toLocaleString()}` : 'Price on Inquiry'}
@@ -278,7 +320,7 @@ const CatalogPage = () => {
 
       <footer className="footer container">
         <div className="footer-copyright">
-          © {new Date().getFullYear()} ONLYBRASS ATELIER. ALL RIGHTS RESERVED.
+          © {new Date().getFullYear()} {settings.site_name} ATELIER. ALL RIGHTS RESERVED.
         </div>
       </footer>
     </div>
