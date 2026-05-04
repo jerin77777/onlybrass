@@ -1,0 +1,10 @@
+services:
+  - type: static
+    name: onlybrass
+    env: static
+    buildCommand: cd client && npm install && npm run build
+    publishPath: client/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
