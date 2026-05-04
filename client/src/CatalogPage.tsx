@@ -148,6 +148,9 @@ const CatalogPage = () => {
             <span className="header-logo-text">{settings.site_name}</span>
           </Link>
         </div>
+        <nav className="header-nav">
+          <Link to="/">Home</Link>
+        </nav>
       </header>
 
       <main className="catalog-container">
