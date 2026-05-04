@@ -50,31 +50,35 @@ const HomePage = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const { data: catData } = await supabase
-        .from('categories')
-        .select('*')
-        .order('created_at', { ascending: true });
+      try {
+        const { data: catData } = await supabase
+          .from('categories')
+          .select('*')
+          .order('created_at', { ascending: true });
 
-      const { data: prodData } = await supabase
-        .from('products')
-        .select('*, product_variants(*)')
-        .eq('is_top_seller', true)
-        .order('created_at', { ascending: false })
-        .limit(4);
+        const { data: prodData } = await supabase
+          .from('products')
+          .select('*, product_variants(*)')
+          .eq('is_top_seller', true)
+          .order('created_at', { ascending: false })
+          .limit(4);
 
-      if (catData) setCategories(catData);
-      if (prodData) setTopSellers(prodData);
-      
-      const { data: settingsData } = await supabase.from('site_settings').select('*');
-      if (settingsData) {
-        const settings: any = { ...homeSettings };
-        settingsData.forEach(item => {
-          settings[item.key] = item.value;
-        });
-        setHomeSettings(settings);
+        if (catData) setCategories(catData);
+        if (prodData) setTopSellers(prodData);
+        
+        const { data: settingsData } = await supabase.from('site_settings').select('*');
+        if (settingsData) {
+          const settings: any = { ...homeSettings };
+          settingsData.forEach(item => {
+            settings[item.key] = item.value;
+          });
+          setHomeSettings(settings);
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     };
 
     fetchData();
@@ -101,7 +105,7 @@ const HomePage = () => {
       <main className="container">
         <section className="hero-section">
           <div className="hero-content">
-            <div className="hero-subtitle">FINE CABINETRY HARDWARE</div>
+            <div className="hero-subtitle">Fine Cabinetry Hardware</div>
             <h1 className="hero-title">The Jewelry Box</h1>
             
             <div className="hero-interaction">

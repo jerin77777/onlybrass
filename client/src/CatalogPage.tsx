@@ -60,7 +60,7 @@ const CatalogPage = () => {
     }
 
     const fetchData = async () => {
-      const { data: catData } = await supabase.from('categories').select('*').order('name');
+      const { data: catData } = await supabase.from('categories').select('*').order('created_at', { ascending: true });
       const { data: subData } = await supabase.from('sub_categories').select('*').order('name');
       const { data: prodData } = await supabase
         .from('products')
@@ -139,7 +139,7 @@ const CatalogPage = () => {
         <h1 className="catalog-title">Explore The Bundle</h1>
         
         {/* Story Bar */}
-        <div className="story-bar">
+        <div className={`story-bar ${selectedCatId ? 'has-selection' : ''}`}>
           {categories.map(cat => (
             <div 
               key={cat.id} 
@@ -147,7 +147,7 @@ const CatalogPage = () => {
               onClick={() => toggleCategory(cat.id)}
               style={{ cursor: 'pointer' }}
             >
-              <div className="story-circle" style={{ border: selectedCatId === cat.id ? '2px solid #aa3bff' : 'none' }}>
+              <div className="story-circle">
                 <img src={cat.image_url} alt={cat.name} />
               </div>
               <span>{cat.name}</span>

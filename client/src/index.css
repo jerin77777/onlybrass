@@ -144,7 +144,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Hero Section */
 .hero-section {
-  padding: var(--spacing-xl) 0 var(--spacing-lg);
+  padding: var(--spacing-md) 0 var(--spacing-md);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
@@ -160,7 +160,7 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
-  margin-top: var(--spacing-lg);
+  margin-top: var(--spacing-md);
 }
 
 @media (min-width: 768px) {
@@ -173,21 +173,27 @@ h1, h2, h3, h4, h5, h6 {
 
 
 .hero-subtitle {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: #777;
-  margin-bottom: var(--spacing-sm);
+  font-size: 0.65rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  color: #999;
+  margin-bottom: 0.2rem;
+  font-family: var(--font-body);
 }
 
 .hero-title {
-  font-size: 3.5rem;
-  margin-bottom: var(--spacing-md);
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.1;
+  color: #000;
+  margin-bottom: var(--spacing-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 @media (min-width: 768px) {
   .hero-title {
-    font-size: 5rem;
+    font-size: 24px;
   }
 }
 
@@ -345,7 +351,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Collage Section */
 .collage-section {
-  padding: var(--spacing-lg) 0;
+  padding: var(--spacing-md) 0 var(--spacing-lg);
   animation: slideUp 1s ease forwards;
 }
 
@@ -667,6 +673,34 @@ img.collage-img {
   border-color: var(--color-gold);
 }
 
+/* Selected/Active states */
+.story-bar.has-selection .story-item {
+  opacity: 0.35;
+  filter: grayscale(100%) contrast(0.8);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.story-bar.has-selection .story-item:hover {
+  opacity: 0.7;
+  filter: grayscale(30%);
+}
+
+.story-bar .story-item.active {
+  opacity: 1 !important;
+  filter: grayscale(0) contrast(1) !important;
+}
+
+.catalog-container .story-item.active .story-circle {
+  border: 2px solid var(--color-gold);
+  transform: scale(1.1);
+  box-shadow: 0 4px 15px rgba(179, 136, 93, 0.2);
+}
+
+.catalog-container .story-item.active span {
+  color: var(--color-gold);
+  font-weight: 600;
+}
+
 .category-nav-inline {
   margin: 0;
 }
@@ -676,15 +710,24 @@ img.collage-img {
   margin-bottom: 0;
   justify-content: flex-start;
   gap: var(--spacing-md);
+  /* Ensure no selection effects on Home page */
+  opacity: 1 !important;
+  filter: none !important;
 }
 
 .category-nav-inline .story-circle {
-  width: 60px; /* Slightly smaller for inline fit */
-  height: 60px;
+  width: 70px;
+  height: 70px;
+  border: none !important;
+}
+
+.category-nav-inline .story-item:hover .story-circle {
+  border: none !important;
+  transform: scale(1.02); /* Keep a subtle scale but remove the ring */
 }
 
 .category-nav-inline .story-item span {
-  font-size: 0.65rem;
+  font-size: 0.75rem;
 }
 
 /* Category Bar for Home Page */
