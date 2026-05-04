@@ -35,7 +35,7 @@ interface Product {
 }
 
 const HomePage = () => {
-  const { settings, loading: settingsLoading } = useSettings();
+  const { settings } = useSettings();
   const [categories, setCategories] = useState<Category[]>([]);
   const [topSellers, setTopSellers] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
