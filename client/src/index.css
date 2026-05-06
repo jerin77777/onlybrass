@@ -173,7 +173,7 @@ h1, h2, h3, h4, h5, h6 {
 
 
 .hero-subtitle {
-  font-size: 0.65rem;
+  font-size: 0.85rem;
   font-weight: 400;
   letter-spacing: 0.05em;
   color: #999;
@@ -220,7 +220,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .cta-text {
   font-family: var(--font-heading);
-  font-size: 1.2rem;
+  font-size: 1.5rem;
   font-style: normal;
   color: #000;
 }
@@ -262,7 +262,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .top-sellers-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: var(--spacing-lg);
 }
 
@@ -301,14 +301,14 @@ h1, h2, h3, h4, h5, h6 {
 
 .product-name {
   font-family: var(--font-body);
-  font-size: 0.9rem;
+  font-size: 1.1rem;
   font-weight: 500;
   color: #333;
 }
 
 .product-price {
   font-family: var(--font-body);
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: #555;
 }
 
@@ -540,7 +540,7 @@ img.collage-img {
 .catalog-container {
   max-width: 1400px;
   margin: 0 auto;
-  padding: var(--spacing-lg);
+  padding: var(--spacing-md) var(--spacing-lg);
 }
 
 .catalog-header-flex {
@@ -553,11 +553,12 @@ img.collage-img {
 }
 
 .catalog-title {
+  margin-top: 0;
   font-size: 20px;
   font-weight: 500;
   line-height: 1.1;
   color: #000;
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
   text-transform: uppercase;
   letter-spacing: 0.02em;
   text-align: left;
@@ -601,13 +602,13 @@ img.collage-img {
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
-  min-width: 80px;
+  min-width: 120px;
   cursor: pointer;
 }
 
 .story-circle {
-  width: 70px;
-  height: 70px;
+  width: 110px;
+  height: 110px;
   border-radius: 50%;
   border: none; 
   padding: 2px;
@@ -641,17 +642,16 @@ img.collage-img {
 
 
 .story-item span {
-  font-size: 0.75rem;
+  font-size: 1rem;
   text-transform: uppercase; /* More formal */
   letter-spacing: 0.05em;
-  color: #333;
+  color: #001233; /* Midnight Navy */
   font-weight: 500;
 }
 
 
 .story-item:hover .story-circle {
   transform: scale(1.05);
-  border-color: var(--color-gold);
 }
 
 /* Selected/Active states */
@@ -672,13 +672,13 @@ img.collage-img {
 }
 
 .catalog-container .story-item.active .story-circle {
-  border: 2px solid var(--color-gold);
+  border: 3px solid #8b0000;
   transform: scale(1.1);
-  box-shadow: 0 4px 15px rgba(179, 136, 93, 0.2);
+  box-shadow: 0 4px 15px rgba(139, 0, 0, 0.2);
 }
 
 .catalog-container .story-item.active span {
-  color: var(--color-gold);
+  color: #001233;
   font-weight: 600;
 }
 
@@ -698,8 +698,8 @@ img.collage-img {
 }
 
 .category-nav-inline .story-circle {
-  width: 70px;
-  height: 70px;
+  width: 110px;
+  height: 110px;
   border: none !important;
 }
 
@@ -709,7 +709,7 @@ img.collage-img {
 }
 
 .category-nav-inline .story-item span {
-  font-size: 0.75rem;
+  font-size: 1rem;
 }
 
 /* Category Bar for Home Page */
@@ -1085,7 +1085,7 @@ img.collage-img {
 /* Catalog Grid */
 .catalog-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: var(--spacing-lg);
 }
 
@@ -1143,13 +1143,13 @@ img.collage-img {
 
 .product-item-name {
   font-family: var(--font-body);
-  font-size: 0.9rem;
+  font-size: 1.1rem;
   font-weight: 500;
   color: #333;
 }
 
 .product-item-price {
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: #555;
   font-weight: 500;
 }
